@@ -6,10 +6,10 @@ CSV_URL = "https://opendata.rhein-kreis-neuss.de/api/v2/catalog/datasets/rhein-k
 def load_data() -> pd.DataFrame:
     # Load external CSV file
     csv_data = pd.read_csv(CSV_URL, sep=";")
-    #print(csv_data)
+    
     return csv_data
 
-def create_sqlite(csv: pd.DataFrame):
+def create_sqlite(csv: pd.DataFrame) -> None:
     # Create engine with name airports for communication
     engine = sa.create_engine("sqlite:///airports.sqlite")
 
