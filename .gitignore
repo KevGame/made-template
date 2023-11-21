@@ -1,3 +1,9 @@
 .DS_Store
 /data/*
 !/data/.gitkeep
+
+# Kaggle API credentials environment
+/project/kaggle_environment.env
+
+# VSCode configs
+.vscode/*
