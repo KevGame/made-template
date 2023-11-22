@@ -30,10 +30,12 @@ if [ -z "$KAGGLE_USERNAME" ] || [ -z "$KAGGLE_KEY" ]; then
     fi
 fi
 
-# After the environment for kaggle is set, the real pipeline can bei executed
-python3 ./project/pipeline.py
+# Install python packages if needed
+echo "- - - - - Install python packages for data pipeline - - - - -"
+pip install pandas
+pip install sqlalchemy
+pip install kaggle
+echo "- - - - - Install of python packages completed - - - - -"
 
-# Check if there was an error in the pipeline and stop this shellscript in that case
-if [ $? -eq 1 ]; then
-    exit 1
-fi
+# After the environment for kaggle is set, the real pipeline can be executed
+python3 ./project/pipeline.py
