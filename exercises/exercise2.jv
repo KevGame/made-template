@@ -1,0 +1,98 @@
+pipeline TrainstopsPipeline {
+
+    TrainstopsExtractor
+        -> TrainstopsTextFileInterpreter
+        -> TrainstopsCSVInterpreter
+        -> StatusColumnDeleter
+        -> TrainstopsTableInterpreter
+        -> TrainstopsSQLiteLoader;
+
+    // HttpExtractor for data with 3 retries if the connection fails
+    block TrainstopsExtractor oftype HttpExtractor {
+        url: "https://download-data.deutschebahn.com/static/datasets/haltestellen/D_Bahnhof_2020_alle.CSV";
+        retries: 3;
+    }
+
+    block TrainstopsTextFileInterpreter oftype TextFileInterpreter {
+
+    }
+
+    block TrainstopsCSVInterpreter oftype CSVInterpreter {
+        delimiter: ";";
+    }
+
+    block StatusColumnDeleter oftype ColumnDeleter {
+        // Column J is column Status
+        delete: [column J];
+    }
+
+    block TrainstopsTableInterpreter oftype TableInterpreter {
+        header: true;
+        columns: [
+            "EVA_NR" oftype integer,
+            "DS100" oftype NonEmptyTextType,
+            "IFOPT" oftype IFOPTType,
+            "NAME" oftype NonEmptyTextType,
+            "Verkehr" oftype VerkehrType,
+            "Laenge" oftype GeographicCoordinateType,
+            "Breite" oftype GeographicCoordinateType,
+            "Betreiber_Name" oftype NonEmptyTextType,
+            "Betreiber_Nr" oftype integer,
+        ];
+    }
+
+    block TrainstopsSQLiteLoader oftype SQLiteLoader {
+        table: "trainstops";
+        file: "./trainstops.sqlite";
+    }
+
+    // - - - Custom value types and constraints - - -
+    // Type for IFOPT with constraint: <exactly two characters>:<any amount of numbers>:<any amount of numbers><optionally another colon followed by any amount of numbers>
+    valuetype IFOPTType oftype text {
+        constraints: [
+            ValidIFOPTRegex
+        ];
+    }
+
+    constraint ValidIFOPTRegex oftype RegexConstraint {
+        regex: /^[a-zA-Z]{2}(:[0-9]*){2,3}$/;
+    }
+
+    // Type for Verkehr with constraint: Verkehr has values FV, RV or nur DPN
+    valuetype VerkehrType oftype text {
+        constraints: [
+            VerkehrAllowList
+        ];
+    }
+
+    constraint VerkehrAllowList oftype AllowlistConstraint {
+        allowlist: ["FV", "RV", "nur DPN"];
+    }
+    
+    // Type for Laenge/Breite with constraint: Laenge/Breite is between -90 and 90 (bounds included)
+    valuetype GeographicCoordinateType oftype decimal {
+        constraints: [
+            GeographicCoordinateRange
+        ];
+    }
+
+    constraint GeographicCoordinateRange oftype RangeConstraint {
+        lowerBound: -90.0;
+        lowerBoundInclusive: true;
+        upperBound: 90.0;
+        upperBoundInclusive: true;
+    }
+
+    // Type for non-empty text cells
+    valuetype NonEmptyTextType oftype text {
+        constraints: [
+            NonEmptyTextLength
+        ];
+    }
+
+    constraint NonEmptyTextLength oftype LengthConstraint {
+        minLength: 1;
+        // There was no condition for the maximum length but I choose 300 because the default value (unset) was not working 
+        maxLength: 300;
+    }
+}
