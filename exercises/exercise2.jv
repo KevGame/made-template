@@ -55,7 +55,7 @@ pipeline TrainstopsPipeline {
     }
 
     constraint ValidIFOPTRegex oftype RegexConstraint {
-        regex: /^[a-zA-Z]{2}(:[0-9]*){2,3}$/;
+        regex: /^[a-z]{2}(:[0-9]+){2,3}$/;
     }
 
     // Type for Verkehr with constraint: Verkehr has values FV, RV or nur DPN
@@ -92,7 +92,8 @@ pipeline TrainstopsPipeline {
 
     constraint NonEmptyTextLength oftype LengthConstraint {
         minLength: 1;
-        // There was no condition for the maximum length but I choose 300 because the default value (unset) was not working 
-        maxLength: 300;
+        // Since there is no default value for maxLength in Jayvee 1.0.0, the default value from version 2.0.0
+        // is set manually after discussion in the forum (9007199254740991).
+        maxLength: 9007199254740991;
     }
 }
