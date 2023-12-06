@@ -24,7 +24,7 @@ if [ -z "$KAGGLE_USERNAME" ] || [ -z "$KAGGLE_KEY" ]; then
     if [ -f "$kaggle_env_file" ]; then
         source "$kaggle_env_file"
     else
-        echo "Error: To use this pipeline, the two environment variables KAGGLE_USERNAME and KAGGLE_KEY must be set."
+        echo "Error: To use this test (and pipeline), the two environment variables KAGGLE_USERNAME and KAGGLE_KEY must be set."
         echo "For more information see the comment in this code file."
         exit 1
     fi
