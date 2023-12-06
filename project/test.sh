@@ -31,7 +31,7 @@ if [ -z "$KAGGLE_USERNAME" ] || [ -z "$KAGGLE_KEY" ]; then
 fi
 
 # Install python packages if needed
-echo "- - - - - Install python packages for data pipeline - - - - -"
+echo "- - - - - Install python packages for test (and pipeline) - - - - -"
 pip install pandas
 pip install sqlalchemy
 pip install kaggle
