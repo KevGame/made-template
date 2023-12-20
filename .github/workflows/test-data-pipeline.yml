@@ -24,4 +24,5 @@ jobs:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
         run: |
+          chmod +x ./project/tests.sh
           ./project/tests.sh
