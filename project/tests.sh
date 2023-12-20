@@ -39,4 +39,4 @@ pip install pytest
 echo "- - - - - Install of python packages completed - - - - -"
 
 # After the environment for kaggle is set, the test can be executed
-pytest ./project/test.py
+pytest ./project/tests.py
