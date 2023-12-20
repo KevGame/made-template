@@ -9,7 +9,7 @@ jobs:
   data-pipeline:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout main branch
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install Python
@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install requirements
+      - name: Install python requirements
         run: |
           pip install -r ./project/python-requirements.txt
 
