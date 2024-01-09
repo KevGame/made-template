@@ -1,6 +1,7 @@
 import sys
 import os
 import pandas as pd
+import numpy as np
 import sqlalchemy as sa
 from kaggle.api.kaggle_api_extended import KaggleApi
 import zipfile
@@ -78,12 +79,38 @@ def prep_datasource_2(csv_data: pd.DataFrame) -> pd.DataFrame:
     # Drop unnecessary columns: Team, Rating, Number of Reviews, Summary, Reviews, Backlogs, Wishlist
     csv_data.drop(['Unnamed: 0', 'Developers', 'Summary', 'Rating', 'Playing', 'Backlogs', 'Wishlist', 'Lists', 'Reviews'], axis=1, inplace=True)
 
+    # Transform abbreviated thousands to full thousands
+    # Helper function for conversion
+    def convert_to_thousands(number: str) -> int:
+        if 'K' in number:
+            return int(float(number.replace('K', '')) * 1000)
+        else:
+            return int(number)
+        
+    # Convert Plays column
+    csv_data['Plays'] = csv_data['Plays'].apply(convert_to_thousands)
+
+    # Convert column Genres to comma-separated strings
+    # Helper function for conversion
+    def convert_comma_separated_strings(value: str) -> str | float:
+        # If value is empty ([]) then store NaN as marker
+        if (value == '[]'):
+            return np.NaN
+        # Remove list brackets ([]) and apostrophes (') from the string
+        return value.strip('[]').replace('\'', '')
+    
+    # Convert columns Platforms and Genres
+    csv_data['Platforms'] = csv_data['Platforms'].apply(convert_comma_separated_strings)
+    csv_data['Genres'] = csv_data['Genres'].apply(convert_comma_separated_strings)
 
     return csv_data
 
 def prep_combine_datasources(csv_data_twitch: pd.DataFrame, csv_data_games: pd.DataFrame) -> pd.DataFrame:
     # Merge datasets on game title to get game specific information 
     csv_data = csv_data_twitch.merge(csv_data_games, left_on='Game', right_on='Title', how='inner')
+
+    # Drop one of both columns with same content (Title in this case)
+    csv_data = csv_data.drop(columns=['Title'])
 
     return csv_data
 
