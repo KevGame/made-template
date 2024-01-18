@@ -1,0 +1,152 @@
+pipeline TemperaturesPipeline {
+
+    TemperaturesExtractor
+    -> TemperaturesArchiveInterpreter
+    -> TemperaturesFilePicker
+    -> TemperaturesTextFileInterpreter
+    -> TemperaturesCSVInterpreter
+    -> TemperaturesCellRangeSelector
+    -> TemperaturesColumnDeleter
+    -> TemperaturesRowDeleter
+    -> TemperaturesTableInterpreter
+    -> TemperaturTableTransformer
+    -> BatterietemperaturTableTransformer
+    -> TemperaturesSQLiteLoader;
+
+    block TemperaturesExtractor oftype HttpExtractor {
+        url: "https://www.mowesta.com/data/measure/mowesta-dataset-20221107.zip";
+        retries: 3;
+    }
+
+    block TemperaturesArchiveInterpreter oftype ArchiveInterpreter {
+        archiveType: "zip";
+    }
+
+    block TemperaturesFilePicker oftype FilePicker {
+        path: "/data.csv";
+    }
+
+    block TemperaturesTextFileInterpreter oftype TextFileInterpreter {
+
+    }
+
+    block TemperaturesCSVInterpreter oftype CSVInterpreter {
+        delimiter: ";";
+    }
+
+    // Select only cells from right columns to prevent duplicates
+    block TemperaturesCellRangeSelector oftype CellRangeSelector {
+        select: range A1:K*;
+    }
+
+    // Delete columns in between so simpilfy name assignment later
+    block TemperaturesColumnDeleter oftype ColumnDeleter {
+        delete: [column F, column G, column H, column I];
+    }
+
+    // Delete header row
+    block TemperaturesRowDeleter oftype RowDeleter {
+        delete: [row 1];
+    }
+
+    block TemperaturesTableInterpreter oftype TableInterpreter {
+        header: false;
+        columns: [
+            "Geraet" oftype PositiveIntType,
+            "Hersteller" oftype NonEmptyTextType,
+            "Model" oftype NonEmptyTextType,
+            "Monat" oftype MonthType,
+            "Temperatur" oftype FahrenheitType,
+            "Batterietemperatur" oftype FahrenheitType,
+            "Geraet aktiv" oftype GermanBooleanType,
+        ];
+    }
+
+    // Column Temperatur in Fahrenheit
+    block TemperaturTableTransformer oftype TableTransformer {
+        inputColumns: ['Temperatur'];
+        outputColumn: 'Temperatur';
+        use: CelsiusToFahrenheitTransform;
+    }
+
+    // Column Batterietemperatur in Fahrenheit
+    block BatterietemperaturTableTransformer oftype TableTransformer {
+        inputColumns: ['Batterietemperatur'];
+        outputColumn: 'Batterietemperatur';
+        use: CelsiusToFahrenheitTransform;
+    }
+
+    block TemperaturesSQLiteLoader oftype SQLiteLoader {
+        table: "temperatures";
+        file: "./temperatures.sqlite";
+    }
+
+    // - - - Custom transforms - - -
+    // Transformation for Celsius to Fahrenheit
+    transform CelsiusToFahrenheitTransform {
+        from Celsius oftype decimal;
+        to Fahrenheit oftype decimal;
+        Fahrenheit: (Celsius * 9/5) + 32;
+    }
+
+    // - - - Custom value types and constraints - - -
+    // Type for positive integers
+    valuetype PositiveIntType oftype integer {
+        constraints: [
+            PositiveIntRange
+        ];
+    }
+
+    constraint PositiveIntRange oftype RangeConstraint {
+        lowerBound: 0;
+        lowerBoundInclusive: true;
+    }
+
+    // Type for non-empty text
+    valuetype NonEmptyTextType oftype text {
+        constraints: [
+            NonEmptyTextLength
+        ];
+    }
+
+    constraint NonEmptyTextLength oftype LengthConstraint {
+        minLength: 1;
+    }
+
+    // Type for valid month
+    valuetype MonthType oftype integer {
+        constraints: [
+            MonthRange
+        ];
+    }
+
+    constraint MonthRange oftype RangeConstraint {
+        lowerBound: 1;
+        lowerBoundInclusive: true;
+        upperBound: 12;
+        upperBoundInclusive: true;
+    }
+
+    // Type for valid Fahrenheit temperature
+    valuetype FahrenheitType oftype decimal {
+        constraints: [
+            FahrenheitRange
+        ];
+    }
+
+    constraint FahrenheitRange oftype RangeConstraint {
+        lowerBound: -459.67; // Absolute zero of Fahrenheit (source: https://de.wikipedia.org/wiki/Grad_Fahrenheit)
+        lowerBoundInclusive: true;
+    }
+
+    // Type for german boolean values (Ja/Nein)
+    valuetype GermanBooleanType oftype text {
+        constraints: [
+            GermanBooleanAllowlist
+        ];
+    }
+
+    constraint GermanBooleanAllowlist oftype AllowlistConstraint {
+        allowlist: ["Ja", "Nein"];
+    }
+}
