@@ -27,14 +27,13 @@ pipeline TemperaturesPipeline {
     }
 
     block TemperaturesTextFileInterpreter oftype TextFileInterpreter {
-
     }
 
     block TemperaturesCSVInterpreter oftype CSVInterpreter {
         delimiter: ";";
     }
 
-    // Select only cells from right columns to prevent duplicates
+    // Select only cells from left columns to prevent duplicates
     block TemperaturesCellRangeSelector oftype CellRangeSelector {
         select: range A1:K*;
     }
