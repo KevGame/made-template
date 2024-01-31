@@ -4,23 +4,23 @@ import urllib.request as request
 from zipfile import ZipFile
 import os
 
-CSV_URL = "https://gtfs.rhoenenergie-bus.de/GTFS.zip"
+DATA_URL = "https://gtfs.rhoenenergie-bus.de/GTFS.zip"
 FILE_NAME = "stops.txt"
 
 def load_data() -> pd.DataFrame:
     # Download external ZIP file
-    request.urlretrieve(CSV_URL, "GTFS.zip")
+    request.urlretrieve(DATA_URL, 'GTFS.zip')
 
     # Extract stops.txt from ZIP file
-    with ZipFile("GTFS.zip", "r") as zip_file:
+    with ZipFile('GTFS.zip', 'r') as zip_file:
         zip_file.extract(FILE_NAME)
 
     # Delete ZIP file
-    os.remove("GTFS.zip")
+    os.remove('GTFS.zip')
 
     # Names and types for columns according to the task
     column_names = ['stop_id', 'stop_name', 'stop_lat', 'stop_lon', 'zone_id']
-    column_types = ['Int64', str, 'Float64', 'Float64', 'Int32']
+    column_types = ['Int32', str, 'Float64', 'Float64', 'Int32']
     column_dtypes = {k: v for k, v in zip(column_names, column_types)}
 
     # Load stops.txt as CSV and select columns with data types
@@ -43,15 +43,12 @@ def filter_data(csv_data: pd.DataFrame) -> pd.DataFrame:
     return csv_data
 
 def validate_data(csv_data: pd.DataFrame) -> pd.DataFrame:
-    # Drop rows with invalid data
+    # Drop rows with invalid and missing data
     csv_data = csv_data.dropna()
 
-    # Check if stop_name is not empty
-    csv_data = csv_data[csv_data['stop_name'] != '']
-
     # Check if stop_lat/stop_lon are geographical coordinates (between -90 and 90, including upper and lower bounds)
-    csv_data = csv_data[(csv_data['stop_lat'] >= -90) & (csv_data['stop_lat'] <= 90)]
-    csv_data = csv_data[(csv_data['stop_lon'] >= -90) & (csv_data['stop_lon'] <= 90)]
+    csv_data = csv_data[csv_data['stop_lat'].between(-90, 90, inclusive='both')]
+    csv_data = csv_data[csv_data['stop_lon'].between(-90, 90, inclusive='both')]
 
     return csv_data
 
@@ -69,7 +66,7 @@ def create_sqlite(csv: pd.DataFrame) -> None:
     }
 
     # Create SQL-File with the specified mappings
-    csv.to_sql("stops", engine, index=False, dtype=column_dtypes, if_exists='replace')
+    csv.to_sql('stops', engine, index=False, dtype=column_dtypes, if_exists='replace')
 
 def main():
     csv_data = load_data()
